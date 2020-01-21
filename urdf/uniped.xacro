@@ -1,0 +1,162 @@
+<?xml version="1.0"?>
+<!-- Revolute-Revolute Manipulator -->
+<robot name="uniped" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Constants for robot dimensions -->
+  <xacro:property name="PI" value="3.1415926535897931"/>
+  <xacro:property name="mass" value="1" /> <!-- arbitrary value for mass -->
+  <xacro:property name="torso_width" value="0.7" /> <!-- width of the torso -->
+  <xacro:property name="leg_width" value="0.2" /> <!-- with of the leg -->
+  <xacro:property name="torso_thickness" value="0.3" /> <!-- thickness of the torso -->
+  <xacro:property name="leg_thickness" value="0.2" /> <!-- thickness of the leg -->
+  <xacro:property name="torso_length" value="0.7" /> <!-- length of the torso -->
+  <xacro:property name="tigh_length" value="0.5" /> <!-- length of the tigh -->
+  <xacro:property name="calf_length" value="0.5" /> <!-- length of the calf -->
+  <xacro:property name="foot_height" value="0.2" /> <!-- height of the foot -->
+  <xacro:property name="foot_width" value="0.3" /> <!-- width of the foot -->
+  <xacro:property name="foot_length" value="0.3" /> <!-- length of the foot -->
+
+  <xacro:property name="gravity_off" value="1" /> <!-- use gravity flag -->
+
+  <!-- Import all Gazebo-customization elements, including Gazebo colors -->
+  <xacro:include filename="$(find uniped_master)/urdf/uniped.gazebo" />
+  <!-- Import Rviz colors -->
+  <xacro:include filename="$(find uniped_master)/urdf/materials.xacro" />
+
+  <!-- Torso Link -->
+  <link name="torso">
+    <collision>
+      <origin xyz="0 0 ${torso_length/2 + tigh_length + calf_length + foot_height}" rpy="0 0 0"/>
+      <geometry>
+	<box size="${torso_width} ${torso_thickness} ${torso_length}"/>
+      </geometry>
+    </collision>
+
+    <visual>
+      <origin xyz="0 0 ${torso_length/2 + tigh_length + calf_length + foot_height}" rpy="0 0 0"/>
+      <geometry>
+	     <box size="${torso_width} ${torso_thickness} ${torso_length}"/>
+      </geometry>
+      <material name="blue"/>
+    </visual>
+
+    <inertial>
+      <origin xyz="0 0 ${torso_length/2 + tigh_length + calf_length + foot_height}" rpy="0 0 0"/>
+      <mass value="${mass}"/>
+      <inertia
+	  ixx="${mass / 12.0 * (torso_thickness*torso_thickness + torso_length*torso_length)}" ixy="0.0" ixz="0.0"
+	  iyy="${mass / 12.0 * (torso_length*torso_length + torso_width*torso_width)}" iyz="0.0"
+	  izz="${mass / 12.0 * (torso_width*torso_width + torso_thickness*torso_thickness)}"/>
+    </inertial>
+  </link>
+
+  <joint name="hip" type="continuous">
+    <parent link="torso"/>
+    <child link="tigh"/>
+    <origin xyz="0 0 ${tigh_length + calf_length + foot_height}" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <dynamics damping="0.7"/>
+  </joint>
+
+  <!-- Tigh Link -->
+  <link name="tigh">
+    <collision>
+      <origin xyz="0 0 ${- tigh_length/2}" rpy="0 0 0"/>
+      <geometry>
+	<box size="${leg_width} ${leg_thickness} ${tigh_length}"/>
+      </geometry>
+    </collision>
+
+    <visual>
+      <origin xyz="0 0 ${- tigh_length/2}" rpy="0 0 0"/>
+      <geometry>
+	     <box size="${leg_width} ${leg_thickness} ${tigh_length}"/>
+      </geometry>
+      <material name="white"/>
+    </visual>
+
+    <inertial>
+      <origin xyz="0 0 ${- tigh_length/2}" rpy="0 0 0"/>
+      <mass value="${mass}"/>
+      <inertia
+	  ixx="${mass / 12.0 * (leg_thickness*leg_thickness + tigh_length*tigh_length)}" ixy="0.0" ixz="0.0"
+	  iyy="${mass / 12.0 * (tigh_length*tigh_length + leg_width*leg_width)}" iyz="0.0"
+	  izz="${mass / 12.0 * (leg_width*leg_width + leg_thickness*leg_thickness)}"/>
+    </inertial>
+  </link>
+
+  <joint name="knee" type="continuous">
+    <parent link="tigh"/>
+    <child link="calf"/>
+    <origin xyz="0 0 ${- tigh_length}" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <dynamics damping="0.7"/>
+  </joint>
+
+  
+  <link name="calf">
+    <collision>
+      <origin xyz="0 0 ${- calf_length/2}" rpy="0 0 0"/>
+      <geometry>
+  <box size="${leg_width} ${leg_thickness} ${calf_length}"/>
+      </geometry>
+    </collision>
+
+    <visual>
+      <origin xyz="0 0 ${- calf_length/2}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${leg_width} ${leg_thickness} ${calf_length}"/>
+      </geometry>
+      <material name="blue"/>
+    </visual>
+
+    <inertial>
+      <origin xyz="0 0 ${- calf_length/2}" rpy="0 0 0"/>
+      <mass value="${mass}"/>
+      <inertia
+    ixx="${mass / 12.0 * (leg_thickness*leg_thickness + calf_length*calf_length)}" ixy="0.0" ixz="0.0"
+    iyy="${mass / 12.0 * (calf_length*calf_length + leg_width*leg_width)}" iyz="0.0"
+    izz="${mass / 12.0 * (leg_width*leg_width + leg_thickness*leg_thickness)}"/>
+    </inertial>
+  </link>
+
+  <joint name="ankle" type="continuous">
+    <parent link="calf"/>
+    <child link="foot"/>
+    <origin xyz="0 0 ${- calf_length}" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <dynamics damping="0.7"/>
+  </joint>
+
+  
+  <link name="foot">
+    <collision>
+      <origin xyz="0 ${foot_length/2 - leg_thickness/2} ${- foot_height/2}" rpy="0 0 0"/>
+      <geometry>
+  <box size="${foot_width} ${foot_length} ${foot_height}"/>
+      </geometry>
+    </collision>
+
+    <visual>
+      <origin xyz="0 ${foot_length/2 - leg_thickness/2} ${- foot_height/2}" rpy="0 0 0"/>
+      <geometry>
+  <box size="${foot_width} ${foot_length} ${foot_height}"/>
+      </geometry>
+      <material name="white"/>
+    </visual>
+
+    <inertial>
+      <origin xyz="0 ${foot_length/2 - leg_thickness/2} ${- foot_height/2}" rpy="0 0 0"/>
+      <mass value="${mass}"/>
+      <inertia
+    ixx="${mass / 12.0 * (foot_length*foot_length + foot_height*foot_height)}" ixy="0.0" ixz="0.0"
+    iyy="${mass / 12.0 * (foot_height*foot_height + foot_width*foot_width)}" iyz="0.0"
+    izz="${mass / 12.0 * (foot_width*foot_width + foot_length*foot_length)}"/>
+    </inertial>
+  </link>
+
+  <gazebo reference="torso"><turnGravityOff>${gravity_off}</turnGravityOff></gazebo>
+  <gazebo reference="tigh"><turnGravityOff>${gravity_off}</turnGravityOff></gazebo>
+  <gazebo reference="calf"><turnGravityOff>${gravity_off}</turnGravityOff></gazebo>
+  <gazebo reference="foot"><turnGravityOff>${gravity_off}</turnGravityOff></gazebo>
+</robot>
