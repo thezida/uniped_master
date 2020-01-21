@@ -86,19 +86,25 @@ int main(int argc, char **argv) {
   double dt = t_max / (N - 1); // give input every dt
   long long iter = 0;
   double freq = 1 / dt;
-  double acc_amp = 10;
+  double acc_amp = 100;
   double delta_t = dt;
+  double omega = 0.01;
 
   // time management
-  auto start = std::chrono::system_clock::now();
+  ros::Time start = ros::Time::now();
   ros::Rate loop_rate(freq);
-  ros::Duration loop_duration(dt);
 
   // loop
   while (ros::ok()) {
 
     // if simulation still runs do...
     if (iter * dt < t_max) {
+      // calculate elapsed seconds
+      ros::Time end = ros::Time::now();
+      ros::Duration elapsed_seconds = end - start;
+      start = end;
+      delta_t = elapsed_seconds.toSec();
+
       for (int i = 0; i < (uniped_model->dof_count - 6); i++) {
         // read joints positions and rates
         gazebo_msgs::GetJointProperties read_joints_srv;
@@ -110,12 +116,6 @@ int main(int argc, char **argv) {
         double pose = read_joints_srv.response.position[0];
         double rate = read_joints_srv.response.rate[0];
 
-        // calculate elapsed seconds
-        auto end = std::chrono::system_clock::now();
-        std::chrono::duration<double> elapsed_seconds = end - start;
-        start = end;
-        delta_t = elapsed_seconds.count();
-
         // calculate derivative of rate = acceleration
         ddqs[joints[i]] = (rate - dqs[joints[i]]) / dt;
         dqs[joints[i]] = rate;
@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
         // set vectors for inverse dynamics
         Q[i] = pose;
         dQ[i] = rate;
-        ddQ[i] = acc_amp * sin(iter * dt);
+        ddQ[i] = acc_amp * sin(omega * iter * dt);
       }
       // calculate desired torques
       // RigidBodyDynamics::InverseDynamics(*uniped_model, Q, dQ, ddQ, tau);
@@ -147,7 +147,11 @@ int main(int argc, char **argv) {
         set_torque_srv.request.effort = tau[6 + i];
         set_torque_srv.request.duration.nsec = 0;
         set_torque_srv.request.duration.sec = dt;
-        control_client.call(set_torque_srv);
+        if (control_client.call(set_torque_srv)) {
+          std::cout<<"TORQUE SENT : "<<tau[6+i]<<" "<<joints[i]<<std::endl;
+        } else {
+          std::cout<<"TORQUE WAS NOT SENT!!!"<<std::endl;
+        }
       }
 
       // print current state
