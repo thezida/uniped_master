@@ -15,6 +15,7 @@
   <xacro:property name="foot_height" value="0.2" /> <!-- height of the foot -->
   <xacro:property name="foot_width" value="0.3" /> <!-- width of the foot -->
   <xacro:property name="foot_length" value="0.3" /> <!-- length of the foot -->
+  <xacro:property name="height" value="1" /> <!-- height of the robot in the air -->
 
   <xacro:property name="gravity_off" value="1" /> <!-- use gravity flag -->
 
@@ -26,14 +27,14 @@
   <!-- Torso Link -->
   <link name="torso">
     <collision>
-      <origin xyz="0 0 ${torso_length/2 + tigh_length + calf_length + foot_height}" rpy="0 0 0"/>
+      <origin xyz="0 0 ${torso_length/2 + tigh_length + calf_length + foot_height + height}" rpy="0 0 0"/>
       <geometry>
 	<box size="${torso_width} ${torso_thickness} ${torso_length}"/>
       </geometry>
     </collision>
 
     <visual>
-      <origin xyz="0 0 ${torso_length/2 + tigh_length + calf_length + foot_height}" rpy="0 0 0"/>
+      <origin xyz="0 0 ${torso_length/2 + tigh_length + calf_length + foot_height + height}" rpy="0 0 0"/>
       <geometry>
 	     <box size="${torso_width} ${torso_thickness} ${torso_length}"/>
       </geometry>
@@ -41,7 +42,7 @@
     </visual>
 
     <inertial>
-      <origin xyz="0 0 ${torso_length/2 + tigh_length + calf_length + foot_height}" rpy="0 0 0"/>
+      <origin xyz="0 0 ${torso_length/2 + tigh_length + calf_length + foot_height + height}" rpy="0 0 0"/>
       <mass value="${mass}"/>
       <inertia
 	  ixx="${mass / 12.0 * (torso_thickness*torso_thickness + torso_length*torso_length)}" ixy="0.0" ixz="0.0"
@@ -53,7 +54,7 @@
   <joint name="hip" type="continuous">
     <parent link="torso"/>
     <child link="tigh"/>
-    <origin xyz="0 0 ${tigh_length + calf_length + foot_height}" rpy="0 0 0"/>
+    <origin xyz="0 0 ${tigh_length + calf_length + foot_height + height}" rpy="0 0 0"/>
     <axis xyz="1 0 0"/>
     <dynamics damping="0.7"/>
   </joint>

@@ -57,8 +57,7 @@ int main(int argc, char **argv) {
     return 0;*/
   // std::stringstream ss;
 
-  // Model* uniped_model = initModel();
-  Model *uniped_model;
+  Model* uniped_model = initModel();
   std::string joints[] = {"hip", "knee", "ankle"};
 
   double t_max = 100;          // secs
@@ -88,11 +87,11 @@ int main(int argc, char **argv) {
   double freq = 1 / dt;
   double acc_amp = 1;
 
-  VectorNd Q = Vector3d::Zero(); // vector of joint variables 6 + 3
-  VectorNd dQ = Vector3d::Zero(); // vector of joint speed 6 + 3
-  VectorNd ddQ = Vector3d::Zero(); // acc calculated using derivative
-  VectorNd tau = Vector3d::Zero(); // tau calculated using inverse dynmics
-  VectorNd a0 = Vector3d::Zero();
+  VectorNd Q = VectorNd::Zero(3); // vector of joint variables 3
+  VectorNd dQ = VectorNd::Zero(3); // vector of joint speed 3
+  VectorNd ddQ = VectorNd::Zero(3); // acc calculated using derivative
+  VectorNd tau = VectorNd::Zero(3); // tau calculated using inverse dynmics
+  VectorNd a0 = VectorNd::Zero(3);
 
   double delta_t = 0;
   auto start = std::chrono::system_clock::now();
@@ -122,9 +121,9 @@ int main(int argc, char **argv) {
         qs[joints[i]] = pose;
 
         // set vectors for inverse dynamics
-        Q[6 + i] = pose;
-        dQ[6 + i] = rate;
-        ddQ[6 + i] = acc_amp * sin(iter * dt);
+        Q[i] = pose;
+        dQ[i] = rate;
+        ddQ[i] = acc_amp * sin(iter * dt);
 
         // std::cout << j << " p: " << pose << " r: " << rate << std::endl;
         /*
@@ -141,8 +140,9 @@ int main(int argc, char **argv) {
       // calculate desired torques for floating base robot
       SpatialTransform X01 = SpatialTransform(Matrix3d(1,0,0,0,1,0,0,0,1),Vector3d(0,0,0));
       SpatialVector v0 = SpatialVector(0,0,0,0,0,0);
-      std::vector<SpatialVector> f_ext;
-      FloatingBaseDynamics::FloatingBaseInverseDynamics(uniped_model,X01,Q,v0,dQ,ddQ,tau,a0,&f_ext);
+      std::vector<SpatialVector> *f_ext;
+      f_ext = NULL;
+      FloatingBaseDynamics::FloatingBaseInverseDynamics(uniped_model,X01,Q,v0,dQ,ddQ,tau,a0,f_ext);
 
       // set desired torques
       for (int i=0;i<(uniped_model->dof_count - 6);i++) {
@@ -158,25 +158,25 @@ int main(int argc, char **argv) {
 
       std::cout << "qs : " << std::endl;
       for (int i = 0; i < 3; i++) {
-        std::cout << Q[6 + i] << std::endl;
+        std::cout << Q[i] << std::endl;
         // ss << Q[6+i] << ",";
       }
       std::cout << std::endl;
       std::cout << "dqs : " << std::endl;
       for (int i = 0; i < 3; i++) {
-        std::cout << dQ[6 + i] << std::endl;
+        std::cout << dQ[i] << std::endl;
         // ss << dQ[6+i] << ",";
       }
       std::cout << std::endl;
       std::cout << "ddqs : " << std::endl;
       for (int i = 0; i < 3; i++) {
-        std::cout << ddQ[6 + i] << " " << ddqs[joints[i]] << std::endl;
+        std::cout << ddQ[i] << " " << ddqs[joints[i]] << std::endl;
         // ss << ddQ_set[6+i] << "," << ddQ_get[6+i] << ",";
       }
       std::cout << std::endl;
       std::cout << "taus : " << std::endl;
       for (int i = 0; i < 3; i++) {
-        std::cout << tau[6 + i] << std::endl;
+        std::cout << tau[i] << std::endl;
         // ss << tau_set[6+i] << "," << tau_get[6+i] << ",";
       }
       std::cout << std::endl;
