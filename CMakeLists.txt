@@ -223,6 +223,6 @@ include_directories(
 #add_executable(unisub src/unisub.cpp)
 #target_link_libraries(unisub ${catkin_LIBRARIES})
 
-add_executable(unicon src/unicon.cpp)
-target_link_libraries(unicon ${catkin_LIBRARIES} ${RBDL_LIBRARY})
-add_dependencies(unicon uniped_master_generate_messages_cpp)
+add_executable(uniped_master src/unicon.cpp src/centroidal_dynamics.cpp src/floating_base_dynamics.cpp src/floating_base_dynamics.h)
+target_link_libraries(uniped_master ${catkin_LIBRARIES} ${RBDL_LIBRARY})
+add_dependencies(uniped_master uniped_master_generate_messages_cpp)
