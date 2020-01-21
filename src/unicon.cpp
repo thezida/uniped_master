@@ -1,8 +1,9 @@
 #include "gazebo_msgs/ApplyJointEffort.h"
 #include "gazebo_msgs/GetJointProperties.h"
 #include "gazebo_msgs/LinkStates.h"
-#include "gazebo_msgs/SetJointProperties.h"
-#include "gazebo_msgs/SetModelConfiguration.h"
+
+//#include "gazebo-9/gazebo/msgs/world_control.pb.h"
+//#include "gazebo-9/gazebo/transport/Publisher.hh"
 
 #include "geometry_msgs/Point.h"
 #include "geometry_msgs/Pose.h"
@@ -39,16 +40,18 @@ void readLinkStates(const gazebo_msgs::LinkStates::ConstPtr &msg) {
 Model *initModel();
 
 int main(int argc, char **argv) {
+  // init node
   ros::init(argc, argv, "unicon");
 
   ros::NodeHandle n;
 
-  Model* uniped_model = initModel();
+  // init model
+  Model *uniped_model = initModel();
   std::string joints[] = {"hip", "knee", "ankle"};
 
-  double t_max = 100;          // secs
-  double N = t_max * 100;      // total inputs = t_max * inputs per sec
-  double dt = t_max / (N - 1); // give input every dt
+  // Suscribe and publish
+  //gazebo::transport::Publisher gazebo_world_pub =
+  //    n.advertise<gazebo::msgs::WorldControl>("~/world_control");
 
   // ros::Subscriber sub = n.subscribe("gazebo/link_states", 1000,
   // readLinkStates);
@@ -59,6 +62,7 @@ int main(int argc, char **argv) {
       n.serviceClient<gazebo_msgs::GetJointProperties>(
           "/gazebo/get_joint_properties");
 
+  // init joint variables
   std::map<std::string, double> qs;   // last joint position
   std::map<std::string, double> dqs;  // last joint speed
   std::map<std::string, double> ddqs; // last joint acceleration
@@ -69,20 +73,31 @@ int main(int argc, char **argv) {
   for (std::string j : joints)
     ddqs[j] = 0;
 
+  // init joint dynamics vectors
+  VectorNd Q = VectorNd::Zero(3);   // vector of joint variables 3
+  VectorNd dQ = VectorNd::Zero(3);  // vector of joint speed 3
+  VectorNd ddQ = VectorNd::Zero(3); // acc calculated using derivative
+  VectorNd tau;                     // tau calculated using inverse dynmics
+  VectorNd a0;
+
+  // setup simulation parameters
+  double t_max = 100;          // secs
+  double N = t_max * 100;      // total inputs = t_max * inputs per sec
+  double dt = t_max / (N - 1); // give input every dt
   long long iter = 0;
   double freq = 1 / dt;
   double acc_amp = 10;
-
-  VectorNd Q = VectorNd::Zero(3); // vector of joint variables 3
-  VectorNd dQ = VectorNd::Zero(3); // vector of joint speed 3
-  VectorNd ddQ = VectorNd::Zero(3); // acc calculated using derivative
-  VectorNd tau; // tau calculated using inverse dynmics
-  VectorNd a0;
-
   double delta_t = dt;
+
+  // time management
   auto start = std::chrono::system_clock::now();
   ros::Rate loop_rate(freq);
+  ros::Duration loop_duration(dt);
+
+  // loop
   while (ros::ok()) {
+
+    // if simulation still runs do...
     if (iter * dt < t_max) {
       for (int i = 0; i < (uniped_model->dof_count - 6); i++) {
         // read joints positions and rates
@@ -102,7 +117,7 @@ int main(int argc, char **argv) {
         delta_t = elapsed_seconds.count();
 
         // calculate derivative of rate = acceleration
-        ddqs[joints[i]] = (rate - dqs[joints[i]]) / delta_t;
+        ddqs[joints[i]] = (rate - dqs[joints[i]]) / dt;
         dqs[joints[i]] = rate;
         qs[joints[i]] = pose;
 
@@ -110,30 +125,32 @@ int main(int argc, char **argv) {
         Q[i] = pose;
         dQ[i] = rate;
         ddQ[i] = acc_amp * sin(iter * dt);
-
       }
       // calculate desired torques
-      //RigidBodyDynamics::InverseDynamics(*uniped_model, Q, dQ, ddQ, tau);
+      // RigidBodyDynamics::InverseDynamics(*uniped_model, Q, dQ, ddQ, tau);
 
       // calculate desired torques for floating base robot
-      SpatialTransform X01 = SpatialTransform(Matrix3d(1,0,0,0,1,0,0,0,1),Vector3d(0,0,0));
-      SpatialVector v0 = SpatialVector(0,0,0,0,0,0);
+      SpatialTransform X01 = SpatialTransform(
+          Matrix3d(1, 0, 0, 0, 1, 0, 0, 0, 1), Vector3d(0, 0, 0));
+      SpatialVector v0 = SpatialVector(0, 0, 0, 0, 0, 0);
       std::vector<SpatialVector> *f_ext;
       f_ext = NULL;
-      FloatingBaseDynamics::FloatingBaseInverseDynamics(uniped_model,X01,Q,v0,dQ,ddQ,tau,a0,f_ext);
+      FloatingBaseDynamics::FloatingBaseInverseDynamics(
+          uniped_model, X01, Q, v0, dQ, ddQ, tau, a0, f_ext);
 
       // set desired torques
-      for (int i=0;i<(uniped_model->dof_count - 6);i++) {
+      for (int i = 0; i < (uniped_model->dof_count - 6); i++) {
         gazebo_msgs::ApplyJointEffort set_torque_srv;
         set_torque_srv.request.joint_name = joints[i];
         set_torque_srv.request.start_time.nsec = 0;
         set_torque_srv.request.start_time.sec = 0;
-        set_torque_srv.request.effort = tau[6+i];
+        set_torque_srv.request.effort = tau[6 + i];
         set_torque_srv.request.duration.nsec = 0;
         set_torque_srv.request.duration.sec = dt;
         control_client.call(set_torque_srv);
       }
 
+      // print current state
       std::cout << "qs : " << std::endl;
       for (int i = 0; i < 3; i++) {
         std::cout << Q[i] << std::endl;
@@ -154,7 +171,7 @@ int main(int argc, char **argv) {
       std::cout << std::endl;
       std::cout << "taus : " << std::endl;
       for (int i = 0; i < 3; i++) {
-        std::cout << tau[6+i] << std::endl;
+        std::cout << tau[6 + i] << std::endl;
         // ss << tau_set[6+i] << "," << tau_get[6+i] << ",";
       }
       std::cout << std::endl;
@@ -162,8 +179,10 @@ int main(int argc, char **argv) {
 
       iter++;
     }
-
-    ros::spinOnce();
+    // wait ---> roscore!!!!
+    loop_rate.sleep();
+    // listen to callbacks
+    //ros::spinOnce();
   }
 
   return 0;
