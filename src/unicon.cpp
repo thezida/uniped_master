@@ -42,20 +42,6 @@ int main(int argc, char **argv) {
   ros::init(argc, argv, "unicon");
 
   ros::NodeHandle n;
-  /*
-    ros::ServiceClient client2 =
-    n.serviceClient<gazebo_msgs::SetModelConfiguration>("/gazebo/set_model_configuration");
-    gazebo_msgs::SetModelConfiguration srv;
-    srv.request.joint_names.push_back("hip");
-    srv.request.joint_positions.push_back(M_PI/2);
-    srv.request.model_name = "rrbot";
-
-
-    if (client2.call(srv)) std::cout<<"Jaas"<<std::endl;
-    else std::cout<<"Noope"<<std::endl;
-
-    return 0;*/
-  // std::stringstream ss;
 
   Model* uniped_model = initModel();
   std::string joints[] = {"hip", "knee", "ankle"};
@@ -124,15 +110,7 @@ int main(int argc, char **argv) {
         Q[i] = pose;
         dQ[i] = rate;
         ddQ[i] = acc_amp * sin(iter * dt);
-
-        // std::cout << j << " p: " << pose << " r: " << rate << std::endl;
-        /*
-        if (client.call(srv)){
-          std::cout << "BRAVO " << j << std::endl;
-        } else {
-          std::cout << "NEEEE " << j << std::endl;
-        }
-         */
+        
       }
       // calculate desired torques
       //RigidBodyDynamics::InverseDynamics(*uniped_model, Q, dQ, ddQ, tau);
