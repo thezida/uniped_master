@@ -71,15 +71,15 @@ int main(int argc, char **argv) {
 
   long long iter = 0;
   double freq = 1 / dt;
-  double acc_amp = 1;
+  double acc_amp = 10;
 
   VectorNd Q = VectorNd::Zero(3); // vector of joint variables 3
   VectorNd dQ = VectorNd::Zero(3); // vector of joint speed 3
   VectorNd ddQ = VectorNd::Zero(3); // acc calculated using derivative
-  VectorNd tau = VectorNd::Zero(3); // tau calculated using inverse dynmics
-  VectorNd a0 = VectorNd::Zero(3);
+  VectorNd tau; // tau calculated using inverse dynmics
+  VectorNd a0;
 
-  double delta_t = 0;
+  double delta_t = dt;
   auto start = std::chrono::system_clock::now();
   ros::Rate loop_rate(freq);
   while (ros::ok()) {
@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
         Q[i] = pose;
         dQ[i] = rate;
         ddQ[i] = acc_amp * sin(iter * dt);
-        
+
       }
       // calculate desired torques
       //RigidBodyDynamics::InverseDynamics(*uniped_model, Q, dQ, ddQ, tau);
@@ -128,7 +128,7 @@ int main(int argc, char **argv) {
         set_torque_srv.request.joint_name = joints[i];
         set_torque_srv.request.start_time.nsec = 0;
         set_torque_srv.request.start_time.sec = 0;
-        set_torque_srv.request.effort = tau[i];
+        set_torque_srv.request.effort = tau[6+i];
         set_torque_srv.request.duration.nsec = 0;
         set_torque_srv.request.duration.sec = dt;
         control_client.call(set_torque_srv);
@@ -154,7 +154,7 @@ int main(int argc, char **argv) {
       std::cout << std::endl;
       std::cout << "taus : " << std::endl;
       for (int i = 0; i < 3; i++) {
-        std::cout << tau[i] << std::endl;
+        std::cout << tau[6+i] << std::endl;
         // ss << tau_set[6+i] << "," << tau_get[6+i] << ",";
       }
       std::cout << std::endl;
