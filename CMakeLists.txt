@@ -19,6 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 FIND_PACKAGE (RBDL REQUIRED)
 FIND_PACKAGE (Eigen3 3.0.0 REQUIRED)
+find_package(gazebo REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -128,7 +129,11 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${RBDL_INCLUDE_DIR}
   ${EIGEN3_INCLUDE_DIR}
+        ${GAZEBO_INCLUDE_DIRS}
 )
+
+link_directories(${GAZEBO_LIBRARY_DIRS})
+list(APPEND CMAKE_CXX_FLAGS "${GAZEBO_CXX_FLAGS}")
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}

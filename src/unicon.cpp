@@ -2,8 +2,14 @@
 #include "gazebo_msgs/GetJointProperties.h"
 #include "gazebo_msgs/LinkStates.h"
 
-//#include "gazebo-9/gazebo/msgs/world_control.pb.h"
-//#include "gazebo-9/gazebo/transport/Publisher.hh"
+/*
+#include <sdformat-6.2/sdf/system_util.hh>
+#include <sdformat-6.2/sdf/Exception.hh>
+#include <sdformat-6.2/sdf/Assert.hh>
+#include <sdformat-6.2/sdf/sdf.hh>
+*/
+
+//#include "gazebo-9/gazebo/transport/transport.hh"
 
 #include "geometry_msgs/Point.h"
 #include "geometry_msgs/Pose.h"
@@ -13,9 +19,6 @@
 
 #include "ros/ros.h"
 #include "std_msgs/String.h"
-
-#include <chrono>
-#include <sstream>
 
 #include <rbdl/rbdl.h>
 
@@ -40,6 +43,7 @@ void readLinkStates(const gazebo_msgs::LinkStates::ConstPtr &msg) {
 Model *initModel();
 
 int main(int argc, char **argv) {
+
   // init node
   ros::init(argc, argv, "unicon");
 
@@ -81,14 +85,14 @@ int main(int argc, char **argv) {
   VectorNd a0;
 
   // setup simulation parameters
-  double t_max = 100;          // secs
+  double t_max = 10*60;          // secs
   double N = t_max * 100;      // total inputs = t_max * inputs per sec
   double dt = t_max / (N - 1); // give input every dt
   long long iter = 0;
   double freq = 1 / dt;
-  double acc_amp = 100;
+  double acc_amp = 10;
   double delta_t = dt;
-  double omega = 0.01;
+  double omega = 0.1;
 
   // time management
   ros::Time start = ros::Time::now();
@@ -96,7 +100,7 @@ int main(int argc, char **argv) {
 
   // loop
   while (ros::ok()) {
-
+    std::cout<<"NEW LOOP"<<std::endl;
     // if simulation still runs do...
     if (iter * dt < t_max) {
       // calculate elapsed seconds
@@ -145,8 +149,8 @@ int main(int argc, char **argv) {
         set_torque_srv.request.start_time.nsec = 0;
         set_torque_srv.request.start_time.sec = 0;
         set_torque_srv.request.effort = tau[6 + i];
-        set_torque_srv.request.duration.nsec = 0;
-        set_torque_srv.request.duration.sec = dt;
+        set_torque_srv.request.duration.nsec = 1000000;
+        set_torque_srv.request.duration.sec = 0;
         if (control_client.call(set_torque_srv)) {
           std::cout<<"TORQUE SENT : "<<tau[6+i]<<" "<<joints[i]<<std::endl;
         } else {
