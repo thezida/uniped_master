@@ -56,7 +56,7 @@
     <child link="tigh"/>
     <origin xyz="0 0 ${tigh_length + calf_length + foot_height + height}" rpy="0 0 0"/>
     <axis xyz="1 0 0"/>
-    <dynamics damping="0.7"/>
+    <dynamics damping="0.0"/>
   </joint>
 
   <!-- Tigh Link -->
@@ -91,7 +91,7 @@
     <child link="calf"/>
     <origin xyz="0 0 ${- tigh_length}" rpy="0 0 0"/>
     <axis xyz="1 0 0"/>
-    <dynamics damping="0.7"/>
+    <dynamics damping="0.0"/>
   </joint>
 
   
@@ -126,7 +126,7 @@
     <child link="foot"/>
     <origin xyz="0 0 ${- calf_length}" rpy="0 0 0"/>
     <axis xyz="1 0 0"/>
-    <dynamics damping="0.7"/>
+    <dynamics damping="0.0"/>
   </joint>
 
   
